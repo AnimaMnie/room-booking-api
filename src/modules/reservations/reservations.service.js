@@ -25,12 +25,12 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
     return aStart < bEnd && bStart < aEnd;
 }
 
-function createReservationsService({ reservationsRepository, roomsRepository, now }) {
-    async function getAll(roomId) {
-        if (roomId === undefined) {
-            return reservationsRepository.findAll();
-        }
-        return reservationsRepository.findByRoomId(roomId);
+function createReservationsService({ reservationsRepository, roomsRepository, now }) {async function list({ page, limit, sort, ...filters }) {
+        const { items, total } = await reservationsRepository.findPage({ filters, sort, page, limit });
+        return {
+            items,
+            meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        };
     }
 
     async function getById(id) {
@@ -130,7 +130,7 @@ function createReservationsService({ reservationsRepository, roomsRepository, no
         });
     }
 
-    return { getAll, getById, create, cancel };
+    return { list, getById, create, cancel };
 }
 
 module.exports = { createReservationsService };

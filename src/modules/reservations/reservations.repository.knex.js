@@ -41,6 +41,20 @@ function toReservation(row) {
     };
 }
 
+const SORT_COLUMNS = {
+    startTime: 'reservations.start_time',
+    createdAt: 'reservations.created_at',
+    participants: 'reservations.participants',
+};
+
+function applyFilters(query, filters) {
+    if (filters.roomId !== undefined) query.where('reservations.room_id', filters.roomId);
+    if (filters.buildingId !== undefined) query.where('rooms.building_id', filters.buildingId);
+    if (filters.status !== undefined) query.where('reservations.status', filters.status);
+    if (filters.from !== undefined) query.where('reservations.end_time', '>', filters.from);
+    if (filters.to !== undefined) query.where('reservations.start_time', '<', filters.to);
+}
+
 function createReservationsRepository(db) {
     function baseQuery() {
         return db('reservations')
@@ -65,6 +79,25 @@ function createReservationsRepository(db) {
             return rows.map(toReservation);
         },
         findById,
+        async findPage({ filters, sort, page, limit }) {
+            const desc = sort.startsWith('-');
+            const column = SORT_COLUMNS[desc ? sort.slice(1) : sort];
+            const direction = desc ? 'desc' : 'asc';
+
+            const [{ total }] = await db('reservations')
+                .join('rooms', 'rooms.id', 'reservations.room_id')
+                .modify(applyFilters, filters)
+                .count('reservations.id as total');
+
+            const rows = await baseQuery()
+                .modify(applyFilters, filters)
+                .orderBy(column, direction)
+                .orderBy('reservations.id', direction)
+                .limit(limit)
+                .offset((page - 1) * limit);
+
+            return { items: rows.map(toReservation), total: Number(total) };
+        },
         async findByRoomId(roomId) {
             const rows = await baseQuery().where('reservations.room_id', roomId).orderBy('reservations.id');
             return rows.map(toReservation);

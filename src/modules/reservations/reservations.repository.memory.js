@@ -25,6 +25,24 @@ function createReservationsRepository() {
         async findById(id) {
             return reservations.find(r => r.id === id) ?? null;
         },
+        async findPage({ filters, sort, page, limit }) {
+            const desc = sort.startsWith('-');
+            const key = desc ? sort.slice(1) : sort;
+            const time = value => new Date(value).getTime();
+
+            const matching = reservations
+                .filter(r => filters.roomId === undefined || r.roomId === filters.roomId)
+                .filter(r => filters.status === undefined || r.status === filters.status)
+                .filter(r => filters.from === undefined || time(r.endTime) > time(filters.from))
+                .filter(r => filters.to === undefined || time(r.startTime) < time(filters.to))
+                .sort((a, b) => {
+                    const diff = key === 'participants' ? a[key] - b[key] : time(a[key]) - time(b[key]);
+                    return (desc ? -1 : 1) * (diff || a.id - b.id);
+                });
+
+            const start = (page - 1) * limit;
+            return { items: matching.slice(start, start + limit), total: matching.length };
+        },
         async findByRoomId(roomId) {
             return reservations.filter(r => r.roomId === roomId);
         },
