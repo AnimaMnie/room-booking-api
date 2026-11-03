@@ -6,6 +6,11 @@ function createReservationsController({ reservationsService }) {
         res.json(list.map(toReservationResponse));
     }
 
+    async function getById(req, res) {
+        const reservation = await reservationsService.getById(req.validated.params.id);
+        res.json(toReservationResponse(reservation));
+    }
+
     async function create(req, res) {
         const reservation = await reservationsService.create(req.validated.body);
         res
@@ -19,7 +24,7 @@ function createReservationsController({ reservationsService }) {
         res.json(toReservationResponse(reservation));
     }
 
-    return { getAll, create, cancel };
+    return { getAll, getById, create, cancel };
 }
 
 module.exports = { createReservationsController };

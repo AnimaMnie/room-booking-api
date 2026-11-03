@@ -23,6 +23,14 @@ function toReservation(row) {
     return {
         id: row.id,
         roomId: row.room_id,
+        room: {
+            id: row.room_id,
+            name: row.room_name,
+            building: {
+                id: row.building_id,
+                name: row.building_name,
+            },
+        },
         reservedBy: row.reserved_by,
         participants: row.participants,
         startTime: row.start_time,
@@ -34,26 +42,40 @@ function toReservation(row) {
 }
 
 function createReservationsRepository(db) {
+    function baseQuery() {
+        return db('reservations')
+            .join('rooms', 'rooms.id', 'reservations.room_id')
+            .join('buildings', 'buildings.id', 'rooms.building_id')
+            .select(
+                'reservations.*',
+                'rooms.name as room_name',
+                'buildings.id as building_id',
+                'buildings.name as building_name',
+            );
+    }
+
+    async function findById(id) {
+        const row = await baseQuery().where('reservations.id', id).first();
+        return row ? toReservation(row) : null;
+    }
+
     return {
         async findAll() {
-            const rows = await db('reservations').select('*').orderBy('id');
+            const rows = await baseQuery().orderBy('reservations.id');
             return rows.map(toReservation);
         },
-        async findById(id) {
-            const row = await db('reservations').where({ id }).first();
-            return row ? toReservation(row) : null;
-        },
+        findById,
         async findByRoomId(roomId) {
-            const rows = await db('reservations').where({ room_id: roomId }).orderBy('id');
+            const rows = await baseQuery().where('reservations.room_id', roomId).orderBy('reservations.id');
             return rows.map(toReservation);
         },
         async create(data) {
-            const [row] = await db('reservations').insert(toRow(data)).returning('*');
-            return toReservation(row);
+            const [{ id }] = await db('reservations').insert(toRow(data)).returning('id');
+            return findById(id);
         },
         async update(id, changes) {
-            const [row] = await db('reservations').where({ id }).update(toRow(changes)).returning('*');
-            return row ? toReservation(row) : null;
+            const updated = await db('reservations').where({ id }).update(toRow(changes));
+            return updated ? findById(id) : null;
         },
     };
 }

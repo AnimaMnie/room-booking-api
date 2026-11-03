@@ -33,6 +33,14 @@ function createReservationsService({ reservationsRepository, roomsRepository, no
         return reservationsRepository.findByRoomId(roomId);
     }
 
+    async function getById(id) {
+        const reservation = await reservationsRepository.findById(id);
+        if (!reservation) {
+            throw new NotFoundError(`Reservation ${id} not found`, 'RESERVATION_NOT_FOUND');
+        }
+        return reservation;
+    }
+
     function checkTimeRules(start, end) {
         if (end <= start) {
             throw timeError('endTime', 'endTime must be later than startTime');
@@ -122,7 +130,7 @@ function createReservationsService({ reservationsRepository, roomsRepository, no
         });
     }
 
-    return { getAll, create, cancel };
+    return { getAll, getById, create, cancel };
 }
 
 module.exports = { createReservationsService };

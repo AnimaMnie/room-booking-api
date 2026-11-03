@@ -5,7 +5,7 @@ function toIsoUtc(value) {
 function toReservationResponse(r) {
     return {
         id: r.id,
-        roomId: r.roomId,
+        room: r.room ?? { id: r.roomId },
         reservedBy: r.reservedBy,
         participants: r.participants,
         startTime: toIsoUtc(r.startTime),

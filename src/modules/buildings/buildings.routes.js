@@ -7,6 +7,7 @@ function createBuildingsRouter({ buildingsController }) {
 
     router.get('/', buildingsController.getAll);
     router.get('/:id', validate({ params: buildingIdParamsSchema }), buildingsController.getById);
+    router.get('/:id/rooms', validate({ params: buildingIdParamsSchema }), buildingsController.getRooms);
     router.post('/', validate({ body: createBuildingSchema }), buildingsController.create);
 
     return router;

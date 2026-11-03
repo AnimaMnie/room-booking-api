@@ -1,6 +1,6 @@
 const { NotFoundError } = require('../../errors');
 
-function createRoomsService({ roomsRepository }) {
+function createRoomsService({ roomsRepository, buildingsRepository }) {
     async function getAll() {
         return roomsRepository.findAll();
     }
@@ -13,7 +13,15 @@ function createRoomsService({ roomsRepository }) {
         return room;
     }
 
-    return { getAll, getById };
+    async function create(data) {
+        const building = await buildingsRepository.findById(data.buildingId);
+        if (!building) {
+            throw new NotFoundError(`Building ${data.buildingId} not found`, 'BUILDING_NOT_FOUND');
+        }
+        return roomsRepository.create(data);
+    }
+
+    return { getAll, getById, create };
 }
 
 module.exports = { createRoomsService };

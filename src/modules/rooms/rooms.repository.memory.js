@@ -14,6 +14,9 @@ function createRoomsRepository() {
         async findById(id) {
             return rooms.find(r => r.id === id) ?? null;
         },
+        async findByBuildingId(buildingId) {
+            return rooms.filter(r => r.buildingId === buildingId);
+        },
         async create(data) {
             const room = { id: nextId++, ...data };
             rooms.push(room);
