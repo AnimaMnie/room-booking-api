@@ -14,6 +14,9 @@ function createRoomsRepository() {
         async findById(id) {
             return rooms.find(r => r.id === id) ?? null;
         },
+        async findByIdForUpdate(id) {
+            return rooms.find(r => r.id === id) ?? null;
+        },
         async findByBuildingId(buildingId) {
             return rooms.filter(r => r.buildingId === buildingId);
         },
@@ -21,6 +24,18 @@ function createRoomsRepository() {
             const room = { id: nextId++, ...data };
             rooms.push(room);
             return room;
+        },
+        async update(id, data) {
+            const room = rooms.find(r => r.id === id);
+            if (!room) return null;
+            Object.assign(room, data);
+            return room;
+        },
+        async delete(id) {
+            const index = rooms.findIndex(r => r.id === id);
+            if (index === -1) return false;
+            rooms.splice(index, 1);
+            return true;
         },
     };
 }

@@ -19,7 +19,17 @@ function createRoomsController({ roomsService }) {
             .json(toRoomResponse(room));
     }
 
-    return { getAll, getById, create };
+    async function update(req, res) {
+        const room = await roomsService.update(req.validated.params.id, req.validated.body);
+        res.json(toRoomResponse(room));
+    }
+
+    async function remove(req, res) {
+        await roomsService.remove(req.validated.params.id);
+        res.status(204).end();
+    }
+
+    return { getAll, getById, create, update, remove };
 }
 
 module.exports = { createRoomsController };

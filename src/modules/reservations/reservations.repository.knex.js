@@ -1,6 +1,6 @@
 const COLUMNS = {
     roomId: 'room_id',
-    reservedBy: 'reserved_by',
+    userId: 'user_id',
     participants: 'participants',
     startTime: 'start_time',
     endTime: 'end_time',
@@ -31,7 +31,11 @@ function toReservation(row) {
                 name: row.building_name,
             },
         },
-        reservedBy: row.reserved_by,
+        userId: row.user_id,
+        user: {
+            id: row.user_id,
+            email: row.user_email,
+        },
         participants: row.participants,
         startTime: row.start_time,
         endTime: row.end_time,
@@ -50,6 +54,7 @@ const SORT_COLUMNS = {
 function applyFilters(query, filters) {
     if (filters.roomId !== undefined) query.where('reservations.room_id', filters.roomId);
     if (filters.buildingId !== undefined) query.where('rooms.building_id', filters.buildingId);
+    if (filters.userId !== undefined) query.where('reservations.user_id', filters.userId);
     if (filters.status !== undefined) query.where('reservations.status', filters.status);
     if (filters.from !== undefined) query.where('reservations.end_time', '>', filters.from);
     if (filters.to !== undefined) query.where('reservations.start_time', '<', filters.to);
@@ -60,11 +65,13 @@ function createReservationsRepository(db) {
         return db('reservations')
             .join('rooms', 'rooms.id', 'reservations.room_id')
             .join('buildings', 'buildings.id', 'rooms.building_id')
+            .join('users', 'users.id', 'reservations.user_id')
             .select(
                 'reservations.*',
                 'rooms.name as room_name',
                 'buildings.id as building_id',
                 'buildings.name as building_name',
+                'users.email as user_email',
             );
     }
 

@@ -1,4 +1,4 @@
-const { NotFoundError, ConflictError, ValidationError } = require('../../errors');
+const { NotFoundError, ConflictError, ValidationError, ForbiddenError } = require('../../errors');
 
 const STATUS = {
     CONFIRMED: 'CONFIRMED',
@@ -25,7 +25,19 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
     return aStart < bEnd && bStart < aEnd;
 }
 
-function createReservationsService({ reservationsRepository, roomsRepository, now }) {async function list({ page, limit, sort, ...filters }) {
+function createReservationsService({ reservationsRepository, runInTransaction, now }) {
+    function isAdmin(currentUser) {
+        return currentUser.role === 'ADMIN';
+    }
+
+    async function list({ page, limit, sort, ...filters }, currentUser) {
+        if (!isAdmin(currentUser)) {
+            if (filters.userId !== undefined) {
+                throw new ForbiddenError('FORBIDDEN', 'Only ADMIN can filter reservations by userId');
+            }
+            filters.userId = currentUser.id;
+        }
+
         const { items, total } = await reservationsRepository.findPage({ filters, sort, page, limit });
         return {
             items,
@@ -33,9 +45,10 @@ function createReservationsService({ reservationsRepository, roomsRepository, no
         };
     }
 
-    async function getById(id) {
+    async function getById(id, currentUser) {
         const reservation = await reservationsRepository.findById(id);
-        if (!reservation) {
+
+        if (!reservation || (!isAdmin(currentUser) && reservation.userId !== currentUser.id)) {
             throw new NotFoundError(`Reservation ${id} not found`, 'RESERVATION_NOT_FOUND');
         }
         return reservation;
@@ -56,8 +69,8 @@ function createReservationsService({ reservationsRepository, roomsRepository, no
         }
     }
 
-    async function checkRoomIsFree(roomId, start, end) {
-        const roomReservations = await reservationsRepository.findByRoomId(roomId);
+    async function checkRoomIsFree(repository, roomId, start, end) {
+        const roomReservations = await repository.findByRoomId(roomId);
 
         const conflict = roomReservations.find(r =>
             r.status === STATUS.CONFIRMED &&
@@ -72,39 +85,39 @@ function createReservationsService({ reservationsRepository, roomsRepository, no
         }
     }
 
-    async function create(data) {
+    async function create(data, currentUser) {
         const start = new Date(data.startTime).getTime();
         const end = new Date(data.endTime).getTime();
 
         checkTimeRules(start, end);
 
-        const room = await roomsRepository.findById(data.roomId);
-        if (!room) {
-            throw new NotFoundError(`Room ${data.roomId} not found`, 'ROOM_NOT_FOUND');
-        }
-        if (data.participants > room.capacity) {
-            throw new ConflictError(
-                'ROOM_CAPACITY_EXCEEDED',
-                `Room capacity is ${room.capacity}, got ${data.participants} participants`,
-            );
-        }
+        return runInTransaction(async ({ roomsRepository, reservationsRepository: txReservations }) => {
+            const room = await roomsRepository.findByIdForUpdate(data.roomId);
+            if (!room) {
+                throw new NotFoundError(`Room ${data.roomId} not found`, 'ROOM_NOT_FOUND');
+            }
+            if (data.participants > room.capacity) {
+                throw new ConflictError(
+                    'ROOM_CAPACITY_EXCEEDED',
+                    `Room capacity is ${room.capacity}, got ${data.participants} participants`,
+                );
+            }
 
-        await checkRoomIsFree(data.roomId, start, end);
+            await checkRoomIsFree(txReservations, data.roomId, start, end);
 
-        return reservationsRepository.create({
-            ...data,
-            status: STATUS.CONFIRMED,
-            createdAt: now().toISOString(),
-            cancelledAt: null,
-            internalNote: 'created via API v2',
+            return txReservations.create({
+                ...data,
+                userId: currentUser.id,
+                status: STATUS.CONFIRMED,
+                createdAt: now().toISOString(),
+                cancelledAt: null,
+                internalNote: 'created via API v2',
+            });
         });
     }
 
-    async function cancel(id) {
-        const reservation = await reservationsRepository.findById(id);
-        if (!reservation) {
-            throw new NotFoundError(`Reservation ${id} not found`, 'RESERVATION_NOT_FOUND');
-        }
+    async function cancel(id, currentUser) {
+        const reservation = await getById(id, currentUser);
 
         if (reservation.status === STATUS.CANCELLED) {
             return reservation;

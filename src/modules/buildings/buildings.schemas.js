@@ -9,4 +9,8 @@ const createBuildingSchema = z.strictObject({
     address: z.string().trim().min(3).max(200),
 });
 
-module.exports = { buildingIdParamsSchema, createBuildingSchema };
+const updateBuildingSchema = createBuildingSchema
+    .partial()
+    .refine(data => Object.keys(data).length > 0, { message: 'At least one field is required' });
+
+module.exports = { buildingIdParamsSchema, createBuildingSchema, updateBuildingSchema };

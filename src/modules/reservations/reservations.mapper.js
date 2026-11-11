@@ -6,7 +6,7 @@ function toReservationResponse(r) {
     return {
         id: r.id,
         room: r.room ?? { id: r.roomId },
-        reservedBy: r.reservedBy,
+        user: r.user ?? { id: r.userId },
         participants: r.participants,
         startTime: toIsoUtc(r.startTime),
         endTime: toIsoUtc(r.endTime),

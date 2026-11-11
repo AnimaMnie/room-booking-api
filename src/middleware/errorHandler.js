@@ -3,6 +3,7 @@ const { AppError } = require('../errors');
 const UNIQUE_VIOLATIONS = {
     buildings_name_unique: 'BUILDING_ALREADY_EXISTS',
     rooms_building_id_name_unique: 'ROOM_ALREADY_EXISTS',
+    users_email_unique: 'EMAIL_TAKEN',
 };
 
 function errorHandler(err, req, res, next) {
@@ -21,6 +22,18 @@ function errorHandler(err, req, res, next) {
         body = {
             code: UNIQUE_VIOLATIONS[err.constraint] ?? 'DUPLICATE_VALUE',
             message: 'Resource with these values already exists',
+        };
+    } else if (err.code === '23503') {
+        status = 409;
+        body = {
+            code: 'RESOURCE_IN_USE',
+            message: 'Resource is still referenced by other resources',
+        };
+    } else if (err.code === '23P01') {
+        status = 409;
+        body = {
+            code: 'ROOM_ALREADY_BOOKED',
+            message: 'Room is already booked in this time',
         };
     } else {
         console.error(`[${req.requestId}] Unhandled error:`, err.stack);

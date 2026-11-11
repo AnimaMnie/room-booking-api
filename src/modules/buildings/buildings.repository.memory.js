@@ -17,6 +17,18 @@ function createBuildingsRepository() {
             buildings.push(building);
             return building;
         },
+        async update(id, data) {
+            const building = buildings.find(b => b.id === id);
+            if (!building) return null;
+            Object.assign(building, data);
+            return building;
+        },
+        async delete(id) {
+            const index = buildings.findIndex(b => b.id === id);
+            if (index === -1) return false;
+            buildings.splice(index, 1);
+            return true;
+        },
     };
 }
 

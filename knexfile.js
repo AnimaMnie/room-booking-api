@@ -1,8 +1,8 @@
-require('dotenv').config({ quiet: true });
+const { config } = require('./src/config');
 
 module.exports = {
     client: 'pg',
-    connection: process.env.DATABASE_URL,
+    connection: config.DATABASE_URL,
     migrations: {
         directory: './db/migrations',
     },

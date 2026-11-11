@@ -22,7 +22,17 @@ function createBuildingsService({ buildingsRepository, roomsRepository }) {
         return buildingsRepository.create(data);
     }
 
-    return { getAll, getById, getRooms, create };
+    async function update(id, data) {
+        await getById(id);
+        return buildingsRepository.update(id, data);
+    }
+
+    async function remove(id) {
+        await getById(id);
+        await buildingsRepository.delete(id);
+    }
+
+    return { getAll, getById, getRooms, create, update, remove };
 }
 
 module.exports = { createBuildingsService };

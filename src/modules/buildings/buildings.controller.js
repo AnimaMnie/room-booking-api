@@ -25,7 +25,17 @@ function createBuildingsController({ buildingsService }) {
             .json(toBuildingResponse(building));
     }
 
-    return { getAll, getById, getRooms, create };
+    async function update(req, res) {
+        const building = await buildingsService.update(req.validated.params.id, req.validated.body);
+        res.json(toBuildingResponse(building));
+    }
+
+    async function remove(req, res) {
+        await buildingsService.remove(req.validated.params.id);
+        res.status(204).end();
+    }
+
+    return { getAll, getById, getRooms, create, update, remove };
 }
 
 module.exports = { createBuildingsController };

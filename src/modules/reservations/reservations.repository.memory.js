@@ -8,7 +8,7 @@ function createReservationsRepository() {
     reservations.push({
         id: nextId++,
         roomId: 3,
-        reservedBy: 'Anna Nowak',
+        userId: 1,
         participants: 50,
         startTime: new Date(seedTime - HOUR).toISOString(),
         endTime: new Date(seedTime + HOUR).toISOString(),
@@ -32,6 +32,7 @@ function createReservationsRepository() {
 
             const matching = reservations
                 .filter(r => filters.roomId === undefined || r.roomId === filters.roomId)
+                .filter(r => filters.userId === undefined || r.userId === filters.userId)
                 .filter(r => filters.status === undefined || r.status === filters.status)
                 .filter(r => filters.from === undefined || time(r.endTime) > time(filters.from))
                 .filter(r => filters.to === undefined || time(r.startTime) < time(filters.to))

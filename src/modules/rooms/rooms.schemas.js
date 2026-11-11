@@ -10,4 +10,9 @@ const createRoomSchema = z.strictObject({
     capacity: z.number().int().positive(),
 });
 
-module.exports = { roomIdParamsSchema, createRoomSchema };
+const updateRoomSchema = createRoomSchema
+    .omit({ buildingId: true })
+    .partial()
+    .refine(data => Object.keys(data).length > 0, { message: 'At least one field is required' });
+
+module.exports = { roomIdParamsSchema, createRoomSchema, updateRoomSchema };

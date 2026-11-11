@@ -11,7 +11,6 @@ const SORT_OPTIONS = [
 
 const createReservationSchema = z.strictObject({
     roomId: z.number().int().positive(),
-    reservedBy: z.string().trim().min(3).max(100),
     participants: z.number().int().positive(),
     startTime: dateTime,
     endTime: dateTime,
@@ -23,6 +22,7 @@ const listReservationsQuerySchema = z
     .object({
         roomId: positiveInt.optional(),
         buildingId: positiveInt.optional(),
+        userId: positiveInt.optional(),
         status: z.enum(['CONFIRMED', 'CANCELLED']).optional(),
         from: dateTime.optional(),
         to: dateTime.optional(),
@@ -40,3 +40,4 @@ module.exports = {
     reservationIdParamsSchema,
     listReservationsQuerySchema,
 };
+

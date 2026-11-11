@@ -30,6 +30,10 @@ function createRoomsRepository(db) {
             return rows.map(toRoom);
         },
         findById,
+        async findByIdForUpdate(id) {
+            const row = await db('rooms').where({ id }).forUpdate().first();
+            return row ? toRoom(row) : null;
+        },
         async findByBuildingId(buildingId) {
             const rows = await baseQuery().where('rooms.building_id', buildingId).orderBy('rooms.id');
             return rows.map(toRoom);
@@ -43,6 +47,14 @@ function createRoomsRepository(db) {
                 })
                 .returning('id');
             return findById(id);
+        },
+        async update(id, data) {
+            const updated = await db('rooms').where({ id }).update(data);
+            return updated ? findById(id) : null;
+        },
+        async delete(id) {
+            const deleted = await db('rooms').where({ id }).del();
+            return deleted > 0;
         },
     };
 }

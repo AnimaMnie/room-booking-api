@@ -34,6 +34,14 @@ function createBuildingsRepository(db) {
                 .returning('id');
             return findById(id);
         },
+        async update(id, data) {
+            const updated = await db('buildings').where({ id }).update(data);
+            return updated ? findById(id) : null;
+        },
+        async delete(id) {
+            const deleted = await db('buildings').where({ id }).del();
+            return deleted > 0;
+        },
     };
 }
 
