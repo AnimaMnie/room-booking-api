@@ -61,13 +61,12 @@ function shutdown(signal) {
     server.close(async err => {
         if (err) {
             console.error('Error while closing HTTP server:', err);
+            process.exitCode = 1;
         }
         console.log('HTTP server closed');
 
         await storage.close();
         console.log('Database connections closed');
-
-        process.exit(err ? 1 : 0);
     });
 }
 
