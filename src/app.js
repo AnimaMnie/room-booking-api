@@ -1,6 +1,8 @@
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
 
-const { requestLogger } = require('./middleware/requestLogger');
+const { openApiSpec } = require('./docs/openapi');
+const { createRequestLogger } = require('./middleware/requestLogger');
 const { notFound } = require('./middleware/notFound');
 const { errorHandler } = require('./middleware/errorHandler');
 const { createAuthenticate } = require('./middleware/authenticate');
@@ -30,10 +32,11 @@ function createApp({
                        runInTransaction,
                        jwt,
                        now = () => new Date(),
+                       logRequests = true,
                    }) {
     const app = express();
 
-    app.use(requestLogger);
+    app.use(createRequestLogger({ log: logRequests }));
     app.use(express.json());
 
     const tokenService = createTokenService(jwt);
@@ -49,6 +52,7 @@ function createApp({
     const roomsController = createRoomsController({ roomsService });
     const reservationsController = createReservationsController({ reservationsService });
 
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
     app.use('/api/auth', createAuthRouter({ authController, authenticate }));
     app.use('/api/buildings', authenticate, createBuildingsRouter({ buildingsController }));
     app.use('/api/rooms', authenticate, createRoomsRouter({ roomsController }));

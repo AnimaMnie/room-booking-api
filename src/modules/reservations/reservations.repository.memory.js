@@ -1,22 +1,6 @@
-const HOUR = 60 * 60 * 1000;
-
-function createReservationsRepository() {
-    let nextId = 1;
-    const reservations = [];
-
-    const seedTime = Date.now();
-    reservations.push({
-        id: nextId++,
-        roomId: 3,
-        userId: 1,
-        participants: 50,
-        startTime: new Date(seedTime - HOUR).toISOString(),
-        endTime: new Date(seedTime + HOUR).toISOString(),
-        status: 'CONFIRMED',
-        createdAt: new Date(seedTime - 24 * HOUR).toISOString(),
-        cancelledAt: null,
-        internalNote: 'seed: reservation already in progress',
-    });
+function createReservationsRepository({ reservations: initial = [] } = {}) {
+    const reservations = initial.map(r => ({ ...r }));
+    let nextId = reservations.reduce((max, r) => Math.max(max, r.id), 0) + 1;
 
     return {
         async findAll() {
