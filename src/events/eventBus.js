@@ -1,7 +1,7 @@
 const { EventEmitter } = require('node:events');
 
 const EVENTS = {
-    RESERVATION_CREATED: 'reservation.create',
+    RESERVATION_CREATED: 'reservation.created',
     RESERVATION_CANCELLED: 'reservation.cancelled',
 };
 
