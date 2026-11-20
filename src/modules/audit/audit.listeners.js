@@ -26,3 +26,5 @@ function registerNotificationListener({ eventBus, usersRepository, logger = cons
 }
 
 module.exports = { registerAuditLogListener, registerNotificationListener };
+
+

@@ -1,5 +1,7 @@
 # Room Booking API
 
+![CI](https://github.com/AnimaMnie/room-booking-api/actions/workflows/ci.yml/badge.svg)
+
 ## Uruchomienie
 
 ```bash
