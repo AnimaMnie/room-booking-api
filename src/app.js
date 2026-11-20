@@ -24,12 +24,20 @@ const { createReservationsService } = require('./modules/reservations/reservatio
 const { createReservationsController } = require('./modules/reservations/reservations.controller');
 const { createReservationsRouter } = require('./modules/reservations/reservations.routes');
 
+const { createEventBus } = require('./events/eventBus');
+const { registerAuditLogListener, registerNotificationListener } = require('./modules/audit/audit.listeners');
+const { createAuditLogService } = require('./modules/audit/audit.service');
+const { createAuditLogController } = require('./modules/audit/audit.controller');
+const { createAuditLogRouter } = require('./modules/audit/audit.routes');
+
 function createApp({
                        usersRepository,
                        buildingsRepository,
                        roomsRepository,
                        reservationsRepository,
+                       auditLogRepository,
                        runInTransaction,
+                       eventBus = createEventBus(),
                        jwt,
                        now = () => new Date(),
                        logRequests = true,
@@ -39,24 +47,35 @@ function createApp({
     app.use(createRequestLogger({ log: logRequests }));
     app.use(express.json());
 
+    registerAuditLogListener({ eventBus, auditLogRepository });
+    registerNotificationListener({ eventBus, usersRepository });
+
     const tokenService = createTokenService(jwt);
     const authenticate = createAuthenticate({ tokenService });
 
     const authService = createAuthService({ usersRepository, tokenService });
     const buildingsService = createBuildingsService({ buildingsRepository, roomsRepository });
     const roomsService = createRoomsService({ roomsRepository, buildingsRepository });
-    const reservationsService = createReservationsService({ reservationsRepository, runInTransaction, now });
+    const reservationsService = createReservationsService({
+        reservationsRepository,
+        runInTransaction,
+        eventBus,
+        now,
+    });
+    const auditLogService = createAuditLogService({ auditLogRepository });
 
     const authController = createAuthController({ authService });
     const buildingsController = createBuildingsController({ buildingsService });
     const roomsController = createRoomsController({ roomsService });
     const reservationsController = createReservationsController({ reservationsService });
+    const auditLogController = createAuditLogController({ auditLogService });
 
     app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
     app.use('/api/auth', createAuthRouter({ authController, authenticate }));
     app.use('/api/buildings', authenticate, createBuildingsRouter({ buildingsController }));
     app.use('/api/rooms', authenticate, createRoomsRouter({ roomsController }));
     app.use('/api/reservations', authenticate, createReservationsRouter({ reservationsController }));
+    app.use('/api/admin/audit-log', authenticate, createAuditLogRouter({ auditLogController }));
 
     app.use(notFound);
     app.use(errorHandler);

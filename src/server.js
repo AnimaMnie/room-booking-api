@@ -7,12 +7,14 @@ function createStorage() {
         const { createBuildingsRepository } = require('./modules/buildings/buildings.repository.memory');
         const { createRoomsRepository } = require('./modules/rooms/rooms.repository.memory');
         const { createReservationsRepository } = require('./modules/reservations/reservations.repository.memory');
+        const { createAuditLogRepository } = require('./modules/audit/audit.repository.memory');
 
         const repositories = {
             usersRepository: createUsersRepository(),
             buildingsRepository: createBuildingsRepository(),
             roomsRepository: createRoomsRepository(),
             reservationsRepository: createReservationsRepository(),
+            auditLogRepository: createAuditLogRepository(),
         };
 
         return {

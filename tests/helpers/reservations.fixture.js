@@ -32,13 +32,14 @@ function reservation(overrides = {}) {
     };
 }
 
-function buildService({ reservations = [], rooms = ROOMS, now = NOW } = {}) {
+function buildService({ reservations = [], rooms = ROOMS, now = NOW, eventBus = { publish() {} } } = {}) {
     const reservationsRepository = createReservationsRepository({ reservations });
     const roomsRepository = createRoomsRepository({ rooms });
 
     const service = createReservationsService({
         reservationsRepository,
         runInTransaction: work => work({ roomsRepository, reservationsRepository }),
+        eventBus,
         now: () => now,
     });
 

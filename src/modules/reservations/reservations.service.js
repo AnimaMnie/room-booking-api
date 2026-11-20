@@ -1,4 +1,5 @@
 const { NotFoundError, ConflictError, ValidationError, ForbiddenError } = require('../../errors');
+const { EVENTS } = require('../../events/eventBus');
 
 const STATUS = {
     CONFIRMED: 'CONFIRMED',
@@ -25,7 +26,7 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
     return aStart < bEnd && bStart < aEnd;
 }
 
-function createReservationsService({ reservationsRepository, runInTransaction, now }) {
+function createReservationsService({ reservationsRepository, runInTransaction, eventBus, now }) {
     function isAdmin(currentUser) {
         return currentUser.role === 'ADMIN';
     }
@@ -91,7 +92,7 @@ function createReservationsService({ reservationsRepository, runInTransaction, n
 
         checkTimeRules(start, end);
 
-        return runInTransaction(async ({ roomsRepository, reservationsRepository: txReservations }) => {
+        const created = await runInTransaction(async ({ roomsRepository, reservationsRepository: txReservations }) => {
             const room = await roomsRepository.findByIdForUpdate(data.roomId);
             if (!room) {
                 throw new NotFoundError(`Room ${data.roomId} not found`, 'ROOM_NOT_FOUND');
@@ -114,6 +115,16 @@ function createReservationsService({ reservationsRepository, runInTransaction, n
                 internalNote: 'created via API v2',
             });
         });
+
+        eventBus.publish(EVENTS.RESERVATION_CREATED, {
+            reservationId: created.id,
+            roomId: created.roomId,
+            userId: created.userId,
+            startTime: new Date(created.startTime).toISOString(),
+            endTime: new Date(created.endTime).toISOString(),
+        });
+
+        return created;
     }
 
     async function cancel(id, currentUser) {
@@ -137,18 +148,22 @@ function createReservationsService({ reservationsRepository, runInTransaction, n
             );
         }
 
-        return reservationsRepository.update(id, {
+        const cancelled = await reservationsRepository.update(id, {
             status: STATUS.CANCELLED,
             cancelledAt: now().toISOString(),
         });
+
+        eventBus.publish(EVENTS.RESERVATION_CANCELLED, {
+            reservationId: cancelled.id,
+            roomId: cancelled.roomId,
+            userId: cancelled.userId,
+            cancelledBy: currentUser.id,
+        });
+
+        return cancelled;
     }
 
     return { list, getById, create, cancel };
 }
 
 module.exports = { createReservationsService };
-
-
-
-
-
